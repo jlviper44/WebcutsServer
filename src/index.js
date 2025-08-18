@@ -6,7 +6,6 @@
 import { handleWebhookRequest } from './handlers/webhook.js';
 import { handleRegistration } from './handlers/registration.js';
 import { handleDeviceUpdate } from './handlers/device.js';
-import { validateRequest } from './utils/validation.js';
 import { corsHeaders } from './config/constants.js';
 import { DatabaseService } from './services/database.js';
 
