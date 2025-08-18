@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "webcuts-server",
+  "account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID", // Replace with your account ID
+  "compatibility_date": "2025-01-01",
+  "main": "src/index.js",
+  "compatibility_flags": ["nodejs_compat"],
+  
+  "observability": {
+    "enabled": true
+  },
+  
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "webcuts-db",
+      "database_id": "YOUR_D1_DATABASE_ID", // Replace with actual D1 database ID
+      "preview_database_id": "webcuts-db"
+    }
+  ],
+
+  "vars": {
+    "ENVIRONMENT": "development",
+    "APNS_PRODUCTION": "false",
+    "APNS_BUNDLE_ID": "com.webcuts.app",
+    "RATE_LIMIT_PER_MINUTE": 10,
+    "RATE_LIMIT_PER_HOUR": 100,
+    "MAX_DEVICES_PER_IP": 10,
+    "LOG_LEVEL": "info"
+  }
+  
+  // Secrets - Set these using wrangler secret put COMMAND
+  // Required secrets:
+  // - APNS_AUTH_KEY: Your APNs authentication key (.p8 file contents)
+  // - APNS_KEY_ID: Your APNs key ID
+  // - APNS_TEAM_ID: Your Apple Developer Team ID
+  // - WEBHOOK_SECRET: Secret for webhook signature validation (optional)
+}

@@ -1,0 +1,45 @@
+{
+  "name": "webcuts-server",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for iOS Shortcut webhook automation",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "echo 'No build step required for Worker'",
+    "preview": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "format": "prettier --write \"src/**/*.js\"",
+    "lint": "eslint src/",
+    "secrets:list": "wrangler secret list",
+    "db:create": "wrangler d1 create webcuts-db",
+    "db:migrate": "wrangler d1 execute webcuts-db --file=./schema.sql",
+    "db:migrate:local": "wrangler d1 execute webcuts-db --local --file=./schema.sql",
+    "db:console": "wrangler d1 execute webcuts-db --command",
+    "db:console:local": "wrangler d1 execute webcuts-db --local --command"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "webhooks",
+    "ios-shortcuts",
+    "automation",
+    "apns",
+    "push-notifications"
+  ],
+  "author": "Webcuts",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "vitest": "^1.2.1",
+    "wrangler": "^3.22.4"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
