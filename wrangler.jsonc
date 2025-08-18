@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "webcuts-server",
-  "account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID", // Replace with your account ID
+  "account_id": "03b7cdccf578e067b45e069f4d877351",
   "compatibility_date": "2025-01-01",
   "main": "src/index.js",
   "compatibility_flags": ["nodejs_compat"],
@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "webcuts-db",
-      "database_id": "YOUR_D1_DATABASE_ID", // Replace with actual D1 database ID
+      "database_id": "e50c7f2e-7770-4360-bd48-39e8bac91599",
       "preview_database_id": "webcuts-db"
     }
   ],
