@@ -3,22 +3,32 @@
  */
 
 /**
- * Generate a unique webhook ID for a shortcut
+ * Generate a cryptographically secure random webhook ID
+ * Uses full 256-bit randomness for maximum security
  */
-export async function generateWebhookId(deviceToken, shortcutId) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(`${deviceToken}:${shortcutId}:${Date.now()}`);
+export async function generateWebhookId() {
+  // Generate 32 random bytes (256 bits) for maximum entropy
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
   
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  
-  // Convert to URL-safe base64-like string
-  const webhookId = hashArray
+  // Convert to hexadecimal string (64 characters)
+  const webhookId = Array.from(randomBytes)
     .map(b => b.toString(16).padStart(2, '0'))
-    .join('')
-    .substring(0, 32); // Take first 32 characters for reasonable length
+    .join('');
   
   return webhookId;
+}
+
+/**
+ * Generate a webhook-specific HMAC secret
+ */
+export function generateWebhookSecret() {
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  
+  return Array.from(randomBytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**
@@ -150,4 +160,94 @@ export async function verifyHMAC(message, signature, secret) {
     signatureBuffer,
     encoder.encode(message)
   );
+}
+
+/**
+ * Encrypt sensitive data (like device tokens)
+ * Uses AES-GCM for authenticated encryption
+ */
+export async function encryptData(plaintext, encryptionKey) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plaintext);
+  
+  // Generate a random IV for each encryption
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  
+  // Import the encryption key
+  const key = await crypto.subtle.importKey(
+    'raw',
+    hexToBytes(encryptionKey),
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+  
+  // Encrypt the data
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    data
+  );
+  
+  // Combine IV and ciphertext for storage
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  
+  // Return as hex string
+  return bytesToHex(combined);
+}
+
+/**
+ * Decrypt sensitive data
+ */
+export async function decryptData(encryptedHex, encryptionKey) {
+  const encrypted = hexToBytes(encryptedHex);
+  
+  // Extract IV and ciphertext
+  const iv = encrypted.slice(0, 12);
+  const ciphertext = encrypted.slice(12);
+  
+  // Import the encryption key
+  const key = await crypto.subtle.importKey(
+    'raw',
+    hexToBytes(encryptionKey),
+    { name: 'AES-GCM' },
+    false,
+    ['decrypt']
+  );
+  
+  // Decrypt the data
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    ciphertext
+  );
+  
+  const decoder = new TextDecoder();
+  return decoder.decode(decrypted);
+}
+
+/**
+ * Generate an encryption key for AES-256-GCM
+ */
+export function generateEncryptionKey() {
+  const key = new Uint8Array(32); // 256 bits
+  crypto.getRandomValues(key);
+  return bytesToHex(key);
+}
+
+// Helper functions
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
