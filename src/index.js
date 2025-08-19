@@ -52,14 +52,14 @@ export default {
 
       // Route: POST /webhook/:shortcutId - Execute webhook for shortcut
       if (path.startsWith('/webhook/') && method === 'POST') {
-        const shortcutId = path.split('/')[2];
-        if (!shortcutId) {
-          return new Response(JSON.stringify({ error: 'Missing shortcut ID' }), {
+        const webhookId = path.split('/')[2];
+        if (!webhookId) {
+          return new Response(JSON.stringify({ error: 'Missing webhook ID' }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
-        return await handleWebhookRequest(request, env, shortcutId);
+        return await handleWebhookRequest(request, env, webhookId);
       }
 
       // Route: PUT /device/:deviceToken - Update device info
@@ -147,6 +147,55 @@ export default {
           lastTriggered: webhookData.last_triggered,
           recentExecutions: executions.results,
           analytics: analytics.results
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Route: GET /debug/shortcuts - Debug: List all shortcuts
+      if (path === '/debug/shortcuts' && method === 'GET') {
+        const db = new DatabaseService(env.DB);
+        const shortcuts = await db.db.prepare('SELECT * FROM shortcuts').all();
+        return new Response(JSON.stringify({
+          count: shortcuts.results.length,
+          shortcuts: shortcuts.results
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Route: GET /debug/webhook/:webhookId - Debug: Get webhook data
+      if (path.startsWith('/debug/webhook/') && method === 'GET') {
+        const webhookId = path.split('/')[3];
+        const db = new DatabaseService(env.DB);
+        const webhookData = await db.getShortcutByWebhook(webhookId);
+        
+        return new Response(JSON.stringify({
+          webhookId,
+          webhookData,
+          dataType: typeof webhookData,
+          fields: webhookData ? Object.keys(webhookData) : null
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Route: GET /debug/devices - Debug: List all devices
+      if (path === '/debug/devices' && method === 'GET') {
+        const db = new DatabaseService(env.DB);
+        const devices = await db.db.prepare('SELECT * FROM devices').all();
+        return new Response(JSON.stringify({
+          count: devices.results.length,
+          devices: devices.results.map(d => ({
+            id: d.id,
+            device_name: d.device_name,
+            device_token: d.device_token ? d.device_token.substring(0, 20) + '...' : null,
+            is_active: d.is_active,
+            push_environment: d.push_environment
+          }))
         }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

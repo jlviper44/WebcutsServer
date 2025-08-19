@@ -116,15 +116,15 @@ export class DatabaseService {
       (webhook_id, shortcut_id, device_id, payload, status, error_message, notification_id, apns_id, response_time_ms)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      webhookId, 
-      shortcutId, 
-      deviceId, 
-      JSON.stringify(payload), 
-      status, 
-      error, 
-      notificationId, 
-      apnsId, 
-      responseTime
+      webhookId || null, 
+      shortcutId || null, 
+      deviceId || null, 
+      JSON.stringify(payload || {}), 
+      status || 'failed', 
+      error || null, 
+      notificationId || null, 
+      apnsId || null, 
+      responseTime || 0
     ).run();
   }
 
@@ -243,25 +243,7 @@ export class DatabaseService {
     `).bind(keyHash).run();
   }
 
-  // Batch operations
-  async createShortcutsBatch(deviceId, shortcuts) {
-    const stmt = this.db.prepare(`
-      INSERT INTO shortcuts (id, device_id, shortcut_id, shortcut_name, webhook_id)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    
-    const batch = shortcuts.map(shortcut => 
-      stmt.bind(
-        crypto.randomUUID(),
-        deviceId,
-        shortcut.id,
-        shortcut.name,
-        shortcut.webhookId
-      )
-    );
-    
-    return await this.db.batch(batch);
-  }
+  // Batch operations section (method already defined above)
 
   // Cleanup operations
   async cleanupOldRateLimits(hoursOld = 1) {

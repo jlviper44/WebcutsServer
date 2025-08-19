@@ -152,6 +152,7 @@ export async function handleWebhookRequest(request, env, webhookId) {
 
   } catch (error) {
     console.error('Webhook handler error:', error);
+    console.error('Error stack:', error.stack);
     
     // Log failed execution
     try {
@@ -172,7 +173,8 @@ export async function handleWebhookRequest(request, env, webhookId) {
     
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      message: error.message 
+      message: error.message,
+      stack: error.stack 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

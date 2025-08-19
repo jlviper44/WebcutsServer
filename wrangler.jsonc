@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "webcuts-server",
+  "name": "webcutsserver",
   "account_id": "03b7cdccf578e067b45e069f4d877351",
   "compatibility_date": "2025-01-01",
   "main": "src/index.js",

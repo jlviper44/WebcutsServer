@@ -9,6 +9,23 @@ import { signJWT } from '../utils/crypto.js';
  */
 export async function sendPushNotification({ deviceToken, shortcutId, shortcutName, payload, pushEnvironment = 'sandbox', env, db }) {
   try {
+    // Check if we're in test mode (no APNs credentials)
+    if (!env.APNS_AUTH_KEY) {
+      console.log('Test mode: Simulating push notification', {
+        deviceToken: deviceToken.substring(0, 10) + '...',
+        shortcutId,
+        shortcutName
+      });
+      
+      return {
+        success: true,
+        notificationId: crypto.randomUUID(),
+        apnsId: 'test-' + crypto.randomUUID(),
+        testMode: true,
+        message: 'Push notification simulated (APNs not configured)'
+      };
+    }
+
     // Generate JWT for APNs authentication
     const token = await generateAPNsToken(env, db);
     
@@ -111,6 +128,12 @@ export async function sendPushNotification({ deviceToken, shortcutId, shortcutNa
  * Generate JWT token for APNs authentication
  */
 async function generateAPNsToken(env, db) {
+  // Check if APNs credentials are configured
+  if (!env.APNS_AUTH_KEY || !env.APNS_KEY_ID || !env.APNS_TEAM_ID) {
+    console.warn('APNs credentials not configured');
+    throw new Error('APNs authentication not configured - please set APNS_AUTH_KEY, APNS_KEY_ID, and APNS_TEAM_ID');
+  }
+
   // Check if we have a cached token that's still valid
   const cachedToken = await db?.getCachedToken('apns:token');
   if (cachedToken) {
