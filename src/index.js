@@ -8,12 +8,34 @@ import { handleRegistration } from './handlers/registration.js';
 import { handleDeviceUpdate } from './handlers/device.js';
 import { corsHeaders } from './config/constants.js';
 import { DatabaseService } from './services/database.js';
+import { DatabaseInitializer } from './services/database-init.js';
+
+// Track if database has been initialized in this worker instance
+let dbInitialized = false;
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
+
+    // Initialize database on first request
+    if (!dbInitialized) {
+      try {
+        const dbInit = new DatabaseInitializer(env.DB);
+        await dbInit.initialize();
+        dbInitialized = true;
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return new Response(JSON.stringify({ 
+          error: 'Database initialization failed',
+          details: error.message 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
 
     // Handle CORS preflight requests
     if (method === 'OPTIONS') {
@@ -57,11 +79,46 @@ export default {
         return new Response(JSON.stringify({ 
           status: 'healthy',
           timestamp: new Date().toISOString(),
-          version: '1.0.0'
+          version: '1.0.0',
+          database: dbInitialized ? 'ready' : 'not initialized'
         }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
+      }
+
+      // Route: POST /admin/init-db - Initialize database (protected)
+      if (path === '/admin/init-db' && method === 'POST') {
+        // Check for admin key in header
+        const adminKey = request.headers.get('x-admin-key');
+        if (adminKey !== env.ADMIN_KEY) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        try {
+          const dbInit = new DatabaseInitializer(env.DB);
+          await dbInit.initialize();
+          dbInitialized = true;
+          
+          return new Response(JSON.stringify({ 
+            success: true,
+            message: 'Database initialized successfully'
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ 
+            error: 'Database initialization failed',
+            details: error.message
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
       }
 
       // Route: GET /webhook/:webhookId/info - Get webhook info
