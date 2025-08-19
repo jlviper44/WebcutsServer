@@ -49,7 +49,31 @@ export async function handleWebhookRequest(request, env, webhookId) {
       });
     }
 
-    const { device_token, shortcut_id, shortcut_name, device_id, push_environment } = webhookData;
+    console.log('Webhook data:', JSON.stringify(webhookData));
+
+    // Extract fields with proper fallbacks
+    const device_token = webhookData.device_token;
+    const shortcut_id = webhookData.shortcut_id;
+    const shortcut_name = webhookData.shortcut_name;
+    const device_id = webhookData.device_id;
+    const push_environment = webhookData.push_environment || 'sandbox';
+    
+    // Validate required fields
+    if (!device_token || !shortcut_id || !device_id) {
+      console.error('Missing required fields:', { 
+        device_token: !!device_token, 
+        shortcut_id: !!shortcut_id,
+        device_id: !!device_id,
+        webhookData: webhookData
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Invalid webhook configuration',
+        details: 'Missing required fields in webhook data'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // Check rate limiting
     const rateLimitResult = await db.checkRateLimit(
