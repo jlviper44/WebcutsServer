@@ -22,7 +22,7 @@
   "vars": {
     "ENVIRONMENT": "development",
     "APNS_PRODUCTION": "false",
-    "APNS_BUNDLE_ID": "com.webcuts.app",
+    "APNS_BUNDLE_ID": "com.ViperApps.Webcuts",
     "RATE_LIMIT_PER_MINUTE": 10,
     "RATE_LIMIT_PER_HOUR": 100,
     "MAX_DEVICES_PER_IP": 10,

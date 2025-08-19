@@ -53,7 +53,17 @@ export async function sendPushNotification({ deviceToken, shortcutId, shortcutNa
       ? 'api.push.apple.com' 
       : 'api.sandbox.push.apple.com';
     
-    const url = `https://${apnsHost}/3/device/${deviceToken}`;
+    // Ensure device token is lowercase (APNs requirement)
+    const formattedToken = deviceToken.toLowerCase();
+    const url = `https://${apnsHost}/3/device/${formattedToken}`;
+
+    // Log request details for debugging
+    console.log('APNs Request:', {
+      url: url,
+      bundleId: env.APNS_BUNDLE_ID || 'com.webcuts.app',
+      tokenLength: formattedToken.length,
+      notificationSize: JSON.stringify(notification).length
+    });
 
     // Send notification to APNs
     const response = await fetch(url, {
@@ -80,6 +90,12 @@ export async function sendPushNotification({ deviceToken, shortcutId, shortcutNa
 
     // Handle various APNs error responses
     const errorData = await response.text();
+    console.error('APNs Error Response:', {
+      status: response.status,
+      errorData: errorData,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+    
     let errorMessage = 'Failed to send notification';
     
     switch (response.status) {
@@ -183,7 +199,9 @@ export async function sendSilentPush({ deviceToken, shortcutId, payload, pushEnv
       ? 'api.push.apple.com' 
       : 'api.sandbox.push.apple.com';
     
-    const url = `https://${apnsHost}/3/device/${deviceToken}`;
+    // Ensure device token is lowercase (APNs requirement)
+    const formattedToken = deviceToken.toLowerCase();
+    const url = `https://${apnsHost}/3/device/${formattedToken}`;
 
     const response = await fetch(url, {
       method: 'POST',
