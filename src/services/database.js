@@ -51,6 +51,22 @@ export class DatabaseService {
     `).bind(id, deviceId, shortcutId, shortcutName, webhookId).first();
   }
 
+  async createShortcutsBatch(deviceId, shortcuts) {
+    const batch = [];
+    for (const shortcut of shortcuts) {
+      const id = crypto.randomUUID();
+      batch.push(
+        this.db.prepare(`
+          INSERT OR REPLACE INTO shortcuts (id, device_id, shortcut_id, shortcut_name, webhook_id)
+          VALUES (?, ?, ?, ?, ?)
+        `).bind(id, deviceId, shortcut.id, shortcut.name, shortcut.webhookId)
+      );
+    }
+    
+    await this.db.batch(batch);
+    return { success: true, count: shortcuts.length };
+  }
+
   async getShortcutByWebhook(webhookId) {
     return await this.db.prepare(`
       SELECT s.*, d.device_token, d.device_name, d.push_environment

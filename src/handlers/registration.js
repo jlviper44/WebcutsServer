@@ -66,8 +66,8 @@ export async function handleRegistration(request, env) {
         continue; // Skip invalid shortcuts
       }
 
-      // Generate unique webhook ID
-      const webhookId = await generateWebhookId(deviceToken, shortcut.id);
+      // Generate unique webhook ID (using the new secure random method)
+      const webhookId = await generateWebhookId();
       
       shortcutsToCreate.push({
         id: shortcut.id,
@@ -84,12 +84,25 @@ export async function handleRegistration(request, env) {
       await db.createShortcutsBatch(device.id, shortcutsToCreate);
     }
 
+    // Build response with webhook info in the format the iOS app expects
+    const webhookInfos = shortcutsToCreate.map(s => ({
+      shortcutId: s.id,
+      shortcutName: s.name,
+      webhookUrl: `${url.origin}/webhook/${s.webhookId}`,
+      webhookId: s.webhookId,
+      status: 'created'
+    }));
+
     // Return webhook URLs
     return new Response(JSON.stringify({
       success: true,
-      deviceId: device.id,
-      webhooks,
-      registeredShortcuts: shortcutsToCreate.length,
+      device: {
+        id: device.id,
+        name: deviceName || device.device_name,
+        bundleId: bundleId || device.bundle_id,
+        registeredAt: device.created_at
+      },
+      webhooks: webhookInfos,
       message: 'Device and shortcuts registered successfully'
     }), {
       status: 200,
